@@ -1,0 +1,203 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Instagram AI Studio</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f7f5f2;
+  color: #292722;
+}
+header {
+  background: #24231f;
+  color: white;
+  padding: 22px 18px;
+}
+header h1 { margin: 0 0 6px; font-size: 23px; }
+header p { margin: 0; color: #d6d2c9; font-size: 13px; }
+main { max-width: 850px; margin: auto; padding: 18px; }
+.card {
+  background: white;
+  padding: 18px;
+  border-radius: 14px;
+  margin-bottom: 16px;
+  border: 1px solid #e7e2da;
+}
+h2 { font-size: 18px; margin-top: 0; }
+label { display: block; font-size: 13px; margin: 12px 0 6px; }
+input, textarea, select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d8d2c9;
+  border-radius: 8px;
+  font: inherit;
+  background: white;
+}
+textarea { min-height: 90px; resize: vertical; }
+button {
+  background: #675343;
+  color: white;
+  padding: 12px 15px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 12px;
+}
+button.secondary { background: #eae5de; color: #292722; }
+.post {
+  border: 1px solid #e7e2da;
+  border-radius: 10px;
+  padding: 13px;
+  margin-top: 10px;
+  overflow-wrap: anywhere;
+}
+.muted { color: #77736b; font-size: 13px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+footer { text-align: center; padding: 20px; color: #77736b; font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Instagram AI Studio</h1>
+  <p>Your personal content planning workspace</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>01 / Create a content draft</h2>
+    <label for="topic">Post topic</label>
+    <input id="topic" placeholder="e.g. Why views don't become customers">
+
+    <label for="format">Content format</label>
+    <select id="format">
+      <option>Instagram Reel</option>
+      <option>Carousel</option>
+      <option>Single image</option>
+    </select>
+
+    <label for="hook">Hook</label>
+    <textarea id="hook" placeholder="Your opening line"></textarea>
+
+    <label for="caption">Caption</label>
+    <textarea id="caption" placeholder="Write your caption here"></textarea>
+
+    <label for="date">Planned date</label>
+    <input id="date" type="date">
+
+    <button onclick="saveDraft()">Save draft</button>
+    <p class="muted">This first version saves drafts in this browser only.</p>
+  </section>
+
+  <section class="card">
+    <h2>02 / Your content calendar</h2>
+    <p class="muted">Saved drafts appear below.</p>
+    <div id="posts"></div>
+  </section>
+
+  <section class="card">
+    <h2>03 / AI assistant</h2>
+    <p>Use Claude to develop hooks, scripts, captions and visual ideas for your niche.</p>
+    <button onclick="window.open('https://claude.ai','_blank')">
+      Open Claude
+    </button>
+    <p class="muted">AI generation is not connected automatically in this version.</p>
+  </section>
+</main>
+
+<footer>Instagram AI Studio · Version 1 · Manual review required</footer>
+
+<script>
+let drafts = [];
+
+try {
+  drafts = JSON.parse(localStorage.getItem("instagramDrafts") || "[]");
+  if (!Array.isArray(drafts)) drafts = [];
+} catch (e) {
+  drafts = [];
+}
+
+function saveDraft() {
+  const topic = document.getElementById("topic").value.trim();
+  if (!topic) {
+    alert("Please enter a post topic.");
+    return;
+  }
+
+  const draft = {
+    id: Date.now(),
+    topic,
+    format: document.getElementById("format").value,
+    hook: document.getElementById("hook").value,
+    caption: document.getElementById("caption").value,
+    date: document.getElementById("date").value
+  };
+
+  drafts.unshift(draft);
+
+  try {
+    localStorage.setItem("instagramDrafts", JSON.stringify(drafts));
+  } catch (e) {
+    alert("Browser storage is unavailable. Your draft may not be saved.");
+  }
+
+  renderDrafts();
+  document.getElementById("topic").value = "";
+  document.getElementById("hook").value = "";
+  document.getElementById("caption").value = "";
+}
+
+function deleteDraft(id) {
+  drafts = drafts.filter(d => d.id !== id);
+  localStorage.setItem("instagramDrafts", JSON.stringify(drafts));
+  renderDrafts();
+}
+
+function renderDrafts() {
+  const container = document.getElementById("posts");
+  container.replaceChildren();
+
+  if (!drafts.length) {
+    container.textContent = "No drafts yet. Create your first one above.";
+    return;
+  }
+
+  drafts.forEach(d => {
+    const card = document.createElement("article");
+    card.className = "post";
+
+    const title = document.createElement("strong");
+    title.textContent = d.topic;
+    card.appendChild(title);
+
+    const details = document.createElement("p");
+    details.className = "muted";
+    details.textContent = d.format + " · " + (d.date || "Date not set");
+    card.appendChild(details);
+
+    const hook = document.createElement("p");
+    hook.textContent = "Hook: " + (d.hook || "Not added");
+    card.appendChild(hook);
+
+    const caption = document.createElement("p");
+    caption.textContent = "Caption: " + (d.caption || "Not added");
+    card.appendChild(caption);
+
+    const del = document.createElement("button");
+    del.className = "secondary";
+    del.textContent = "Delete draft";
+    del.onclick = () => deleteDraft(d.id);
+    card.appendChild(del);
+
+    container.appendChild(card);
+  });
+}
+
+renderDrafts();
+</script>
+</body>
+</html>
